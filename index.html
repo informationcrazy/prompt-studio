@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Prompt Studio Pro - Debug Edition</title>
+    <title>Prompt Studio Pro - 2026 Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -29,8 +29,8 @@
                 <h1 class="font-extrabold text-lg tracking-tight">PromptStudio <span class="text-indigo-600">Pro</span></h1>
             </div>
             <!-- Connection Tester -->
-            <button id="testConnectionBtn" class="bg-slate-200 hover:bg-slate-300 text-[10px] font-bold px-3 py-1.5 rounded-lg text-slate-700 transition-colors flex items-center gap-1">
-                <i data-lucide="wifi" class="w-3 h-3"></i> Check API
+            <button id="testConnectionBtn" class="bg-indigo-50 hover:bg-indigo-100 text-[10px] font-bold px-3 py-1.5 rounded-lg text-indigo-700 transition-colors flex items-center gap-1 border border-indigo-200">
+                <i data-lucide="refresh-cw" class="w-3 h-3"></i> Sync Models
             </button>
         </div>
         
@@ -41,14 +41,15 @@
                 placeholder="Paste Gemini API Key (starts with AIza...)">
         </div>
 
-        <!-- Model Selector (Updated IDs) -->
+        <!-- Model Selector (Updated for 2026) -->
         <div class="flex items-center gap-2">
             <span class="text-[10px] font-bold text-slate-400 uppercase">Model:</span>
             <select id="modelSelect" class="bg-white border border-slate-200 text-[11px] font-bold rounded-lg px-2 py-1.5 outline-none text-slate-700 w-full shadow-sm">
-                <option value="gemini-1.5-flash-001">Gemini 1.5 Flash (v001 - Stable)</option>
-                <option value="gemini-1.5-flash">Gemini 1.5 Flash (Alias)</option>
-                <option value="gemini-1.5-pro-001">Gemini 1.5 Pro (v001 - Stable)</option>
-                <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Experimental)</option>
+                <!-- 默认使用最新的 2.5 系列 -->
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recommended)</option>
+                <option value="gemini-2.5-pro">Gemini 2.5 Pro (High Intelligence)</option>
+                <option value="gemini-flash-latest">Gemini Flash Latest (Auto)</option>
+                <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
             </select>
         </div>
     </nav>
@@ -65,10 +66,10 @@
             </div>
             <textarea id="promptInput" 
                 class="w-full h-40 p-4 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm border border-slate-100 transition-all resize-none placeholder:text-slate-300" 
-                placeholder="Enter your prompt idea here..."></textarea>
+                placeholder="输入您的提示词草稿... (例如：帮我写一个 Python 教程的大纲)"></textarea>
             <button id="analyzeBtn" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold flex items-center justify-center gap-3 shadow-lg shadow-indigo-200 active:scale-[0.98] transition-all hover:bg-indigo-700">
                 <i data-lucide="sparkles" class="w-5 h-5"></i>
-                Optimize Now
+                AI Optimize (智能优化)
             </button>
         </div>
 
@@ -80,7 +81,7 @@
                         <i data-lucide="shield-check" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <div class="text-[10px] font-bold text-slate-400 uppercase">Quality Score</div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase">Score (评分)</div>
                         <div id="scoreLabel" class="text-xl font-black text-slate-800">0%</div>
                     </div>
                 </div>
@@ -93,7 +94,7 @@
                 </div>
                 <div id="optimizedText" class="text-indigo-50 font-mono text-xs leading-relaxed whitespace-pre-wrap bg-slate-950/40 p-5 rounded-2xl border border-slate-800 max-h-64 overflow-y-auto"></div>
                 <button id="runBtn" class="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-emerald-900/20 hover:bg-emerald-700">
-                    <i data-lucide="play-circle" class="w-5 h-5"></i> Run Live Test
+                    <i data-lucide="play-circle" class="w-5 h-5"></i> Run Test (运行测试)
                 </button>
             </div>
 
@@ -114,14 +115,14 @@
                 <button id="clearLogs" class="text-slate-500 text-[10px] hover:text-white underline">Clear</button>
             </div>
             <div id="logContainer" class="text-[9px] text-slate-300 max-h-40 overflow-y-auto space-y-1 scrollbar-hide font-mono">
-                <div class="log-line text-emerald-400">[System] App Ready. Use "Check API" to verify access.</div>
+                <div class="log-line text-emerald-400">[System] Updated for Gemini 2.5+. Defaulting to 2.5 Flash.</div>
             </div>
         </div>
     </main>
 
     <!-- Loader -->
     <div id="globalLoader" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
-        <div class="bg-white p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-3">
+        <div class="bg-white p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-3 animate-pulse">
             <div class="loader"></div>
             <p class="text-xs font-bold text-slate-600">Processing...</p>
         </div>
@@ -155,12 +156,13 @@
             if (!apiKey) { log("Missing API Key", 'error'); return null; }
 
             const selectedModel = document.getElementById('modelSelect').value;
-            // Ensure no double 'models/' if option values change in future
+            // Handle models that might contain 'models/' prefix or not
             const modelId = selectedModel.startsWith('models/') ? selectedModel.split('/')[1] : selectedModel;
             
+            // Using v1beta as it generally supports the newer models better during preview
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
             
-            log(`Sending request to: ${modelId}...`);
+            log(`Calling: ${modelId}...`);
 
             const payload = { contents: [{ parts: [{ text: text }] }] };
 
@@ -187,25 +189,25 @@
                 if (!response.ok) {
                     const errorMsg = data.error?.message || "Unknown error";
                     log(`API Fail: ${errorMsg}`, 'error');
-                    if(data.error?.code === 404) {
-                        log("Tip: Try a different model or check API Key permissions.", 'warn');
-                    }
                     throw new Error(errorMsg);
                 }
 
                 return data;
             } catch (err) {
-                log(`Network Error: ${err.message}`, 'error');
+                log(`Error: ${err.message}`, 'error');
                 return null;
             }
         }
 
-        // 3. Diagnostic Tool (List Models)
+        // 3. Auto-Sync Models Function (自动同步模型)
         document.getElementById('testConnectionBtn').onclick = async () => {
             const apiKey = document.getElementById('apiKeyInput').value.trim();
             if (!apiKey) return alert("Enter API Key first.");
             
-            log("Testing connection (Listing Models)...", 'warn');
+            const btn = document.getElementById('testConnectionBtn');
+            btn.innerHTML = '<div class="loader w-3 h-3 border-slate-500 border-t-transparent"></div> Syncing...';
+            
+            log("Fetching available models...", 'warn');
             const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
 
             try {
@@ -214,12 +216,35 @@
                 
                 if (!res.ok) throw new Error(data.error?.message || "Failed to list models");
                 
-                const modelNames = data.models ? data.models.map(m => m.name.replace('models/', '')).filter(n => n.includes('gemini')) : [];
-                log(`Success! Available Models: ${modelNames.join(', ')}`, 'success');
-                alert(`Connection Success!\nAvailable Models:\n${modelNames.slice(0,5).join('\n')}\n...`);
+                // Filter only 'generateContent' supported models and sort newer first
+                const validModels = data.models
+                    .filter(m => m.supportedGenerationMethods.includes("generateContent"))
+                    .map(m => m.name.replace('models/', ''))
+                    .sort((a, b) => b.localeCompare(a)); // Sort desc (newer usually higher numbers)
+
+                const select = document.getElementById('modelSelect');
+                select.innerHTML = ''; // Clear existing
+                
+                validModels.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m;
+                    opt.text = m;
+                    // Auto-select Gemini 2.5 Flash if available
+                    if(m.includes('gemini-2.5-flash') && !m.includes('preview')) opt.selected = true;
+                    select.appendChild(opt);
+                });
+
+                log(`Synced ${validModels.length} models from API.`, 'success');
+                btn.innerHTML = '<i data-lucide="check" class="w-3 h-3"></i> Synced!';
+                lucide.createIcons();
+                setTimeout(() => {
+                    btn.innerHTML = '<i data-lucide="refresh-cw" class="w-3 h-3"></i> Sync Models';
+                    lucide.createIcons();
+                }, 2000);
+
             } catch (e) {
-                log(`Connection Failed: ${e.message}`, 'error');
-                alert(`Connection Failed:\n${e.message}`);
+                log(`Sync Failed: ${e.message}`, 'error');
+                btn.innerText = 'Retry';
             }
         };
 
@@ -235,7 +260,6 @@
                 const data = await callGemini(input, true);
                 if (data && data.candidates?.[0]?.content) {
                     let content = data.candidates[0].content.parts[0].text;
-                    // Sanitize JSON
                     content = content.replace(/```json/g, '').replace(/```/g, '').trim();
                     const result = JSON.parse(content);
                     
@@ -243,7 +267,7 @@
                     document.getElementById('optimizedText').innerText = result.optimizedPrompt;
                     document.getElementById('resultSection').classList.remove('hidden');
                     document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
-                    log("Optimization complete.", 'success');
+                    log("Optimization success.", 'success');
                 }
             } catch (e) {
                 log(`Processing Error: ${e.message}`, 'error');
