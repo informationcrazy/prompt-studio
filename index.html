@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Prompt Studio Pro</title>
+    <title>Prompt Studio Pro - Fixed API</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -13,6 +13,8 @@
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #4f46e5; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .log-line { border-bottom: 1px solid #334155; padding: 6px 0; font-family: monospace; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen pb-20">
@@ -92,8 +94,8 @@
                 </span>
                 <button id="clearLogs" class="text-slate-500 text-[10px] hover:text-white underline">Clear</button>
             </div>
-            <div id="logContainer" class="text-[9px] text-slate-300 max-h-32 overflow-y-auto space-y-1 scrollbar-hide">
-                <div class="log-line text-emerald-400">[System] App Ready. Waiting for input.</div>
+            <div id="logContainer" class="text-[9px] text-slate-300 max-h-40 overflow-y-auto space-y-1 scrollbar-hide">
+                <div class="log-line text-emerald-400">[System] App Ready. Casing fixed for v1beta.</div>
             </div>
         </div>
     </main>
@@ -126,20 +128,23 @@
 
         async function callGemini(text, isAnalysis = false) {
             const selectedModel = document.getElementById('modelSelect').value;
-            // Use v1 endpoint as it is often more stable for GA models
-            const url = `https://generativelanguage.googleapis.com/v1/models/${selectedModel}:generateContent?key=${API_KEY}`;
+            // Switching back to v1beta to ensure JSON mode and system instructions work smoothly
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${API_KEY}`;
             
-            log(`Calling API with model: ${selectedModel}...`);
+            log(`Requesting v1beta with model: ${selectedModel}...`);
 
+            // Using snake_case for all JSON fields to comply with REST API requirements
             const payload = {
                 contents: [{ parts: [{ text: text }] }]
             };
 
             if (isAnalysis) {
-                payload.systemInstruction = { 
-                    parts: [{ text: "You are a Prompt Engineering Coach. Based on Anthropic's tutorials, evaluate the prompt and provide optimization. Respond ONLY with a valid JSON object: {\"score\": number, \"analysis\": \"string\", \"optimizedPrompt\": \"string\"}" }] 
+                payload.system_instruction = { 
+                    parts: [{ text: "You are a Prompt Engineering Coach. Evaluate based on Anthropic tutorial: structure, XML tags, and CoT. Respond ONLY with a valid JSON: {\"score\": number, \"analysis\": \"brief\", \"optimizedPrompt\": \"full rewritten prompt\"}" }] 
                 };
-                payload.generationConfig = { responseMimeType: "application/json" };
+                payload.generation_config = { 
+                    response_mime_type: "application/json" 
+                };
             }
 
             try {
@@ -154,28 +159,13 @@
                 if (!response.ok) {
                     const errorMsg = data.error?.message || "Unknown error occurred";
                     log(`API ERROR: ${errorMsg}`, 'error');
-                    
-                    // Fallback attempt for v1beta if v1 fails
-                    if (url.includes('/v1/')) {
-                        log(`Attempting fallback to v1beta...`, 'info');
-                        const fallbackUrl = url.replace('/v1/', '/v1beta/');
-                        const fbResponse = await fetch(fallbackUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        const fbData = await fbResponse.json();
-                        if (fbResponse.ok) return fbData;
-                    }
-                    
                     throw new Error(errorMsg);
                 }
 
-                log(`Request successful!`, 'success');
+                log(`Success! (请求成功！)`, 'success');
                 return data;
             } catch (err) {
                 log(`CRITICAL: ${err.message}`, 'error');
-                alert("API Error: " + err.message);
                 return null;
             }
         }
@@ -226,16 +216,15 @@
             const text = document.getElementById('optimizedText').innerText;
             navigator.clipboard.writeText(text).then(() => {
                 log("Copied to clipboard.", 'success');
-                alert("Copied! (已复制)");
+                alert("已复制！");
             }).catch(() => {
-                // Fallback for older browsers
                 const ta = document.createElement("textarea");
                 ta.value = text;
                 document.body.appendChild(ta);
                 ta.select();
                 document.execCommand('copy');
                 document.body.removeChild(ta);
-                alert("Copied! (已复制)");
+                alert("已复制！");
             });
         };
 
