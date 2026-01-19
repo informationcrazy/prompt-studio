@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Prompt Studio Mobile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body { 
+            font-family: 'Inter', sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        .glass-header { 
+            background: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(8px); 
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Custom scrollbar for clean mobile look */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen pb-20 overflow-x-hidden">
+
+    <!-- Navbar (导航栏) -->
+    <nav class="sticky top-0 z-30 glass-header border-b border-slate-200 px-4 py-4 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-2">
+            <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-md shadow-indigo-100">
+                <i data-lucide="zap" class="w-5 h-5"></i>
+            </div>
+            <h1 class="font-extrabold text-lg tracking-tight">PromptStudio</h1>
+        </div>
+        <button id="toggleView" class="flex items-center gap-2 text-xs font-bold bg-indigo-50 text-indigo-600 px-4 py-2 rounded-full active:scale-95 transition-transform border border-indigo-100">
+            <i data-lucide="library" class="w-3.5 h-3.5"></i>
+            <span id="viewText">Library</span>
+        </button>
+    </nav>
+
+    <main class="p-4 max-w-lg mx-auto">
+        
+        <!-- Editor View (编辑器视图) -->
+        <div id="editorView" class="space-y-6 animate-fade-in">
+            
+            <!-- Input Card (输入卡片) -->
+            <div class="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-200 space-y-4">
+                <div class="flex items-center gap-2 text-slate-400 font-bold text-[10px] uppercase tracking-widest">
+                    <i data-lucide="pen-tool" class="w-3.5 h-3.5"></i> Draft Prompt (提示词草稿)
+                </div>
+                <textarea id="promptInput" 
+                    class="w-full h-44 p-4 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:bg-white outline-none text-sm border border-slate-100 transition-all resize-none placeholder:text-slate-300" 
+                    placeholder="Type your idea here..."></textarea>
+                <button id="analyzeBtn" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold flex items-center justify-center gap-3 shadow-lg shadow-indigo-200 active:scale-[0.98] transition-all">
+                    <i data-lucide="sparkles" class="w-5 h-5"></i>
+                    Optimize Now (立即优化)
+                </button>
+            </div>
+
+            <!-- Result Section (结果部分) -->
+            <div id="analysisSection" class="hidden space-y-6 animate-fade-in">
+                
+                <!-- Score Indicator (评分指示) -->
+                <div class="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                            <i data-lucide="shield-check" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">Advisor Score</div>
+                            <div id="scoreLabel" class="text-xl font-black text-slate-800">0%</div>
+                        </div>
+                    </div>
+                    <div class="text-right max-w-[60%]">
+                        <p id="analysisText" class="text-[11px] text-slate-500 italic leading-tight"></p>
+                    </div>
+                </div>
+                
+                <!-- Optimized Output (优化输出) -->
+                <div class="bg-slate-900 rounded-[2rem] p-6 shadow-xl border border-slate-800 space-y-5">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-indigo-400 font-bold text-xs uppercase tracking-widest">
+                            <i data-lucide="wand-2" class="w-4 h-4"></i> Result
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="copyBtn" class="p-2 bg-slate-800 rounded-lg text-slate-400 active:text-white border border-slate-700">
+                                <i data-lucide="copy" class="w-4 h-4"></i>
+                            </button>
+                            <button id="saveBtn" class="p-2 bg-slate-800 rounded-lg text-indigo-400 active:text-white border border-slate-700">
+                                <i data-lucide="bookmark" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="optimizedText" class="text-indigo-50 font-mono text-xs leading-relaxed whitespace-pre-wrap bg-slate-950/40 p-5 rounded-2xl border border-slate-800 overflow-x-auto"></div>
+                    <button id="runBtn" class="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-emerald-900/20">
+                        <i data-lucide="play-circle" class="w-5 h-5"></i> Run Real Test (执行测试)
+                    </button>
+                </div>
+
+                <!-- Execution Preview (执行预览) -->
+                <div id="previewSection" class="hidden bg-white rounded-[2rem] p-6 border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex items-center gap-2 text-slate-400 font-bold text-[10px] uppercase tracking-widest">
+                        <i data-lucide="terminal" class="w-3.5 h-3.5"></i> AI Response Preview (回复预览)
+                    </div>
+                    <div id="previewContent" class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap bg-slate-50 p-5 rounded-2xl border border-slate-100"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Library View (库视图) -->
+        <div id="libraryView" class="hidden space-y-4 animate-fade-in">
+            <div class="flex items-center justify-between px-2">
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Saved Projects</h2>
+                <span id="itemCount" class="text-[10px] font-bold bg-slate-200 px-2 py-0.5 rounded-full">0</span>
+            </div>
+            <div id="libraryList" class="space-y-4">
+                <!-- Items Injected Here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading State (加载状态) -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+        <div class="bg-white p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-4">
+            <div class="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-xs font-bold text-slate-600">AI is thinking...</p>
+        </div>
+    </div>
+
+    <!-- Notification (通知) -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white px-6 py-3 rounded-full text-xs font-bold shadow-2xl opacity-0 transition-opacity pointer-events-none">
+        Copied to clipboard!
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+        // --- Config ---
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'mobile-prompt-v3';
+        const apiKey = ""; 
+
+        let user = null;
+        let isLibrary = false;
+        let currentResult = null;
+
+        // UI Helpers
+        const $ = (id) => document.getElementById(id);
+        lucide.createIcons();
+
+        function showToast(msg) {
+            $('toast').innerText = msg;
+            $('toast').classList.replace('opacity-0', 'opacity-100');
+            setTimeout(() => $('toast').classList.replace('opacity-100', 'opacity-0'), 2000);
+        }
+
+        // --- Auth & Data ---
+        signInAnonymously(auth);
+        onAuthStateChanged(auth, (u) => {
+            user = u;
+            if (u) loadLibrary();
+        });
+
+        async function fetchAI(prompt, system = null) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const body = { contents: [{ parts: [{ text: prompt }] }] };
+            if (system) {
+                body.systemInstruction = { parts: [{ text: system }] };
+                if (system.includes('JSON')) body.generationConfig = { responseMimeType: "application/json" };
+            }
+            
+            const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+            return await res.json();
+        }
+
+        // --- Actions ---
+        $('analyzeBtn').onclick = async () => {
+            const input = $('promptInput').value.trim();
+            if (!input) return;
+
+            $('loadingOverlay').classList.remove('hidden');
+            const coachSystem = "You are a mobile AI Coach. Evaluate prompt quality (0-100) based on Anthropic tutorial. Respond ONLY JSON: { 'score': number, 'analysis': 'short explanation', 'optimizedPrompt': 'full rewritten prompt' }";
+            
+            try {
+                const data = await fetchAI(input, coachSystem);
+                const result = JSON.parse(data.candidates[0].content.parts[0].text);
+                currentResult = result;
+                
+                $('scoreLabel').innerText = result.score + "%";
+                $('analysisText').innerText = result.analysis;
+                $('optimizedText').innerText = result.optimizedPrompt;
+                $('analysisSection').classList.remove('hidden');
+                $('previewSection').classList.add('hidden');
+            } catch (e) {
+                showToast("Error during analysis.");
+            } finally {
+                $('loadingOverlay').classList.add('hidden');
+            }
+        };
+
+        $('runBtn').onclick = async () => {
+            if (!currentResult) return;
+            $('loadingOverlay').classList.remove('hidden');
+            try {
+                const data = await fetchAI(currentResult.optimizedPrompt);
+                $('previewContent').innerText = data.candidates[0].content.parts[0].text;
+                $('previewSection').classList.remove('hidden');
+                $('previewSection').scrollIntoView({ behavior: 'smooth' });
+            } catch (e) {
+                $('previewContent').innerText = "Failed to execute prompt.";
+            } finally {
+                $('loadingOverlay').classList.add('hidden');
+            }
+        };
+
+        $('saveBtn').onclick = async () => {
+            if (!user || !currentResult) return;
+            await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'saved_prompts'), {
+                original: $('promptInput').value,
+                optimized: currentResult.optimizedPrompt,
+                score: currentResult.score,
+                createdAt: serverTimestamp()
+            });
+            showToast("Saved to Library!");
+        };
+
+        function loadLibrary() {
+            const q = query(collection(db, 'artifacts', appId, 'users', user.uid, 'saved_prompts'));
+            onSnapshot(q, (snap) => {
+                $('libraryList').innerHTML = '';
+                $('itemCount').innerText = snap.size;
+                if (snap.empty) {
+                    $('libraryList').innerHTML = '<div class="text-center py-20 text-slate-300 text-xs italic font-medium">No saved prompts yet.</div>';
+                    return;
+                }
+                snap.docs.forEach(d => {
+                    const data = d.data();
+                    const div = document.createElement('div');
+                    div.className = "bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm space-y-3";
+                    div.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-black px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg">SCORE: ${data.score}</span>
+                            <button class="delete-btn text-slate-300 active:text-red-500" data-id="${d.id}"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                        <p class="text-[11px] text-slate-400 line-clamp-2 italic">"${data.original}"</p>
+                        <div class="bg-slate-50 p-3 rounded-xl font-mono text-[10px] text-slate-700 max-h-24 overflow-y-auto">${data.optimized}</div>
+                    `;
+                    $('libraryList').appendChild(div);
+                });
+                lucide.createIcons();
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.onclick = () => deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'saved_prompts', btn.dataset.id));
+                });
+            });
+        }
+
+        $('toggleView').onclick = () => {
+            isLibrary = !isLibrary;
+            $('editorView').classList.toggle('hidden', isLibrary);
+            $('libraryView').classList.toggle('hidden', !isLibrary);
+            $('viewText').innerText = isLibrary ? "Editor" : "Library";
+            lucide.createIcons();
+        };
+
+        $('copyBtn').onclick = () => {
+            const text = $('optimizedText').innerText;
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast("Copied version!");
+        };
+    </script>
+</body>
+</html>
