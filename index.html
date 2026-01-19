@@ -3,281 +3,294 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Prompt Studio Pro - Anthropic Master Edition</title>
-    <!-- Fixed Script Links (修复后的脚本链接) -->
+    <title>Prompt Studio Pro - Master Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    borderRadius: { 'xl-2': '1.25rem', 'xl-3': '1.5rem' }
+                }
+            }
+        }
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .glass-header { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #4f46e5; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .log-line { border-bottom: 1px solid #334155; padding: 6px 0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; word-break: break-all; }
-        .chapter-pill { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em; }
-        ::-webkit-scrollbar { width: 4px; }
+        body { transition: background-color 0.3s, color 0.3s; -webkit-tap-highlight-color: transparent; }
+        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .dark .glass-nav { background: rgba(15, 23, 42, 0.85); }
+        .spinner { border: 3px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; width: 20px; height: 20px; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .log-entry { border-bottom: 1px solid rgba(148, 163, 184, 0.1); padding: 4px 0; font-family: 'JetBrains Mono', monospace; }
+        ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #334155; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen pb-24 selection:bg-indigo-100 selection:text-indigo-900">
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen pb-24 selection:bg-indigo-100 dark:selection:bg-indigo-500/30">
 
-    <!-- Header & Config (页眉与配置) -->
-    <nav class="sticky top-0 z-40 glass-header border-b border-slate-200 px-4 py-4 flex flex-col gap-3 shadow-sm">
-        <div class="flex items-center justify-between w-full">
+    <!-- Navigation (导航栏) -->
+    <nav class="sticky top-0 z-50 glass-nav border-b border-slate-200 dark:border-slate-800 px-4 py-4 flex flex-col gap-3">
+        <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-200">
-                    <i data-lucide="zap" class="w-5 h-5"></i>
+                <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-200 dark:shadow-none">
+                    <i data-lucide="sparkles" class="w-5 h-5"></i>
                 </div>
                 <h1 class="font-extrabold text-lg tracking-tight">PromptStudio <span class="text-indigo-600">Pro</span></h1>
             </div>
-            <button id="syncModelsBtn" class="bg-indigo-50 hover:bg-indigo-100 text-[10px] font-bold px-3 py-1.5 rounded-lg text-indigo-700 transition-colors flex items-center gap-1 border border-indigo-200">
-                <i data-lucide="refresh-cw" class="w-3 h-3"></i> Sync Models
-            </button>
-        </div>
-        
-        <div class="relative group">
-            <input type="password" id="apiKeyInput" 
-                class="w-full bg-slate-100 border border-slate-200 text-xs rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white text-slate-600 transition-all"
-                placeholder="Enter Gemini API Key (AIza...)">
-            <div class="absolute right-3 top-2.5 text-slate-300 group-focus-within:text-indigo-500">
-                <i data-lucide="key" class="w-4 h-4"></i>
+            <div class="flex items-center gap-2">
+                <button id="themeToggle" class="p-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                    <i data-lucide="sun" id="sunIcon" class="w-4 h-4 hidden"></i>
+                    <i data-lucide="moon" id="moonIcon" class="w-4 h-4"></i>
+                </button>
+                <button id="syncModels" class="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 px-3 py-2 rounded-xl text-[10px] font-bold border border-indigo-100 dark:border-indigo-800 flex items-center gap-1 active:scale-95 transition-all">
+                    <i data-lucide="refresh-cw" class="w-3 h-3"></i> Sync (同步)
+                </button>
             </div>
         </div>
-
-        <div class="flex items-center gap-2">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Model:</span>
-            <select id="modelSelect" class="bg-white border border-slate-200 text-[11px] font-bold rounded-xl px-3 py-2 outline-none text-slate-700 w-full shadow-sm appearance-none cursor-pointer hover:border-indigo-300 transition-colors">
-                <option value="gemini-1.5-flash">Gemini 1.5 Flash (Standard)</option>
-                <option value="gemini-1.5-pro">Gemini 1.5 Pro (Powerful)</option>
-                <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash</option>
-            </select>
+        
+        <div class="space-y-2">
+            <div class="relative">
+                <input type="password" id="apiKey" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all text-slate-600 dark:text-slate-300" placeholder="API Key (AIza...)">
+                <i data-lucide="key" class="absolute right-3 top-2.5 w-4 h-4 text-slate-300 dark:text-slate-600"></i>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest pl-1">Model:</span>
+                <select id="modelSelect" class="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-[11px] font-bold outline-none text-slate-700 dark:text-slate-200 appearance-none cursor-pointer">
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                    <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash</option>
+                </select>
+            </div>
         </div>
     </nav>
 
-    <main class="p-4 max-w-lg mx-auto space-y-6">
-        <!-- Draft Input (草稿输入区) -->
-        <div class="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-200 space-y-4">
-            <div class="flex items-center justify-between text-slate-400 font-bold text-[10px] uppercase tracking-tighter">
-                <div class="flex items-center gap-2"><i data-lucide="pen-tool" class="w-4 h-4"></i> Prompt Draft</div>
-                <button id="clearInput" class="hover:text-red-500 transition-colors p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+    <main class="p-4 max-w-xl mx-auto space-y-6">
+        
+        <!-- Input Area (输入区) -->
+        <section class="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 shadow-sm border border-slate-200 dark:border-slate-800 space-y-4">
+            <div class="flex items-center justify-between text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase tracking-widest px-2">
+                <span class="flex items-center gap-2"><i data-lucide="pen-tool" class="w-4 h-4"></i> Prompt Draft (草稿)</span>
+                <button id="clearInput" class="hover:text-red-500 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
-            <textarea id="promptInput" 
-                class="w-full h-48 p-5 bg-slate-50 border-none rounded-3xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm leading-relaxed text-slate-700 placeholder:text-slate-300 transition-all resize-none" 
-                placeholder="在此输入您的提示词想法，例如：'帮我写一个工作周报模板'"></textarea>
-            <button id="analyzeBtn" class="w-full py-4.5 bg-indigo-600 text-white rounded-3xl font-bold flex items-center justify-center gap-3 shadow-xl shadow-indigo-100 active:scale-[0.98] transition-all hover:bg-indigo-700">
-                <i data-lucide="sparkles" class="w-5 h-5"></i>
-                AI Optimize (智能优化)
+            <textarea id="promptInput" class="w-full h-48 p-5 bg-slate-50 dark:bg-slate-950 border-none rounded-3xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm leading-relaxed text-slate-700 dark:text-slate-300 placeholder:text-slate-300 dark:placeholder:text-slate-700 transition-all resize-none" placeholder="Enter your prompt idea here... (在此输入您的提示词想法...)"></textarea>
+            <button id="optimizeBtn" class="w-full py-4.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-3xl font-bold flex items-center justify-center gap-3 shadow-xl shadow-indigo-100 dark:shadow-none active:scale-[0.98] transition-all">
+                <i data-lucide="wand-2" class="w-5 h-5"></i>
+                Optimize Prompt (开始优化)
             </button>
-        </div>
+        </section>
 
-        <!-- Results Display (结果展示区) -->
-        <div id="resultSection" class="hidden space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <!-- Score & Analysis -->
-            <div class="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-4">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2.5 bg-emerald-50 text-emerald-600 rounded-2xl shadow-inner"><i data-lucide="shield-check" class="w-6 h-6"></i></div>
-                        <div>
-                            <div class="text-[10px] font-bold text-slate-400 uppercase">Coach Score</div>
-                            <div id="scoreLabel" class="text-3xl font-black text-slate-800 leading-none">0%</div>
-                        </div>
+        <!-- Result Area (结果区) -->
+        <section id="resultArea" class="hidden space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <!-- Score Card -->
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-2xl shadow-inner">
+                        <i data-lucide="shield-check" class="w-6 h-6"></i>
                     </div>
-                    <div class="text-right max-w-[55%]">
-                        <p id="analysisText" class="text-[11px] text-slate-500 italic leading-relaxed"></p>
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase">Coach Score (评分)</div>
+                        <div id="scoreValue" class="text-3xl font-black text-slate-800 dark:text-slate-100">0%</div>
                     </div>
                 </div>
-                <!-- Chapter Breakdown (分章节反馈) -->
-                <div id="chapterContainer" class="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
-                    <!-- Chapters injected here -->
+                <div class="text-right max-w-[50%]">
+                    <p id="analysisSummary" class="text-[11px] text-slate-500 dark:text-slate-400 italic leading-relaxed"></p>
                 </div>
             </div>
-            
-            <!-- Optimized Version -->
-            <div class="bg-slate-900 rounded-[2.5rem] p-6 shadow-2xl border border-slate-800 space-y-5">
-                <div class="text-indigo-400 font-bold text-xs uppercase flex justify-between items-center px-2">
-                    <span class="flex items-center gap-2"><i data-lucide="wand-2" class="w-4 h-4"></i> Optimized Version</span>
-                    <button id="copyBtn" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl transition-all border border-slate-700"><i data-lucide="copy" class="w-4 h-4"></i></button>
+
+            <!-- Optimized Prompt Box -->
+            <div class="bg-slate-900 rounded-[2.5rem] p-7 shadow-2xl border border-slate-800 space-y-5">
+                <div class="flex items-center justify-between px-2">
+                    <span class="text-indigo-400 font-bold text-xs uppercase tracking-widest flex items-center gap-2">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i> Optimized Version (优化版)
+                    </span>
+                    <button id="copyBtn" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl border border-slate-700 transition-all">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                    </button>
                 </div>
-                <div id="optimizedText" class="text-indigo-50 font-mono text-[13px] leading-relaxed whitespace-pre-wrap bg-slate-950/40 p-6 rounded-[1.5rem] border border-slate-800 max-h-80 overflow-y-auto selection:bg-indigo-500/30"></div>
-                <button id="runBtn" class="w-full py-4 bg-emerald-600 text-white rounded-3xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-emerald-950/20 hover:bg-emerald-700">
-                    <i data-lucide="play-circle" class="w-5 h-5"></i> Run Live Test (实测预览)
+                <div id="optimizedOutput" class="text-indigo-50 font-mono text-[13px] leading-relaxed whitespace-pre-wrap bg-slate-950/40 p-6 rounded-3xl border border-slate-800 max-h-80 overflow-y-auto selection:bg-indigo-500/30"></div>
+                <button id="runTestBtn" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-3xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-emerald-950/20">
+                    <i data-lucide="play-circle" class="w-5 h-5"></i>
+                    Run Live Test (实测预览)
                 </button>
             </div>
 
             <!-- Execution Preview -->
-            <div id="previewSection" class="hidden bg-white rounded-[2.5rem] p-6 border border-slate-200 shadow-sm space-y-4">
-                <div class="text-slate-400 font-bold text-[10px] uppercase flex items-center gap-2 px-2">
-                    <i data-lucide="terminal" class="w-4 h-4"></i> Live Output
+            <div id="previewArea" class="hidden bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                <div class="text-slate-400 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 px-2">
+                    <i data-lucide="terminal" class="w-4 h-4"></i> Execution Output (执行输出)
                 </div>
-                <div id="previewContent" class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap bg-slate-50 p-6 rounded-3xl border border-slate-100 max-h-96 overflow-y-auto"></div>
+                <div id="previewOutput" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap bg-slate-50 dark:bg-slate-950 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 max-h-96 overflow-y-auto"></div>
             </div>
-        </div>
+        </section>
 
-        <!-- Debug Log (系统日志) -->
-        <div class="bg-slate-800 rounded-3xl p-5 shadow-inner border border-slate-700">
+        <!-- System Logs (系统日志) -->
+        <section class="bg-slate-800 dark:bg-black rounded-3xl p-5 border border-slate-700 shadow-inner">
             <div class="flex justify-between items-center mb-3 border-b border-slate-700 pb-2 px-1">
-                <span class="text-slate-400 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2"><i data-lucide="activity" class="w-3.5 h-3.5"></i> System Log</span>
-                <button id="clearLogs" class="text-slate-500 text-[10px] hover:text-white underline font-bold">Clear</button>
+                <span class="text-slate-400 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2">
+                    <i data-lucide="activity" class="w-3.5 h-3.5"></i> System Logs (日志)
+                </span>
+                <button id="clearLogs" class="text-slate-500 text-[10px] hover:text-white underline font-bold transition-colors">Clear</button>
             </div>
-            <div id="logContainer" class="text-[10px] text-slate-300 max-h-40 overflow-y-auto space-y-1.5 font-mono scrollbar-hide">
-                <div class="log-line text-emerald-400 opacity-80">[System] PromptStudio Pro v2.5 Initialized.</div>
+            <div id="logViewport" class="text-[10px] text-slate-400 max-h-40 overflow-y-auto space-y-1.5 font-mono">
+                <div class="log-entry text-emerald-400 opacity-80">[System] Master Edition Ready. (大师版就绪。)</div>
             </div>
-        </div>
+        </section>
     </main>
 
-    <!-- Global Loader -->
-    <div id="globalLoader" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-all">
-        <div class="bg-white p-8 rounded-[2rem] shadow-2xl flex flex-col items-center gap-4">
-            <div class="loader"></div>
-            <p class="text-xs font-bold text-slate-600 uppercase tracking-widest">Optimizing...</p>
+    <!-- Global Loader (全局加载) -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-all">
+        <div class="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl flex flex-col items-center gap-4">
+            <div class="spinner border-t-indigo-600"></div>
+            <p class="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">AI is Processing (处理中)...</p>
         </div>
     </div>
 
     <script>
-        // Init Lucide
         lucide.createIcons();
 
-        // 1. Persistence Logic (持久化逻辑)
-        const savedKey = localStorage.getItem('gemini_api_key');
-        if (savedKey) document.getElementById('apiKeyInput').value = savedKey;
-        document.getElementById('apiKeyInput').oninput = (e) => localStorage.setItem('gemini_api_key', e.target.value.trim());
-
-        const log = (msg, type = 'info') => {
-            const container = document.getElementById('logContainer');
-            const colors = { error: 'text-red-400', success: 'text-emerald-400', info: 'text-slate-400' };
-            const time = new Date().toLocaleTimeString('zh-CN', { hour12: false });
-            const line = document.createElement('div');
-            line.className = `log-line ${colors[type] || colors.info}`;
-            line.textContent = `[${time}] ${msg}`;
-            container.appendChild(line);
-            container.scrollTop = container.scrollHeight;
+        // 1. Theme Management (主题管理)
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        if (currentTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.getElementById('sunIcon').classList.remove('hidden');
+            document.getElementById('moonIcon').classList.add('hidden');
+        }
+        document.getElementById('themeToggle').onclick = () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            document.getElementById('sunIcon').classList.toggle('hidden');
+            document.getElementById('moonIcon').classList.toggle('hidden');
         };
 
-        // 2. Main API Interface (API 核心接口)
-        async function callGemini(text, isAnalysis = false) {
-            const apiKey = document.getElementById('apiKeyInput').value.trim();
-            if (!apiKey) { log("Error: Missing API Key", 'error'); alert("Please enter your API Key first!"); return null; }
+        // 2. Persistence (持久化)
+        const savedApiKey = localStorage.getItem('gemini_api_key');
+        if (savedApiKey) document.getElementById('apiKey').value = savedApiKey;
+        document.getElementById('apiKey').oninput = (e) => localStorage.setItem('gemini_api_key', e.target.value.trim());
 
-            const modelId = document.getElementById('modelSelect').value;
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+        const writeLog = (msg, status = 'info') => {
+            const viewport = document.getElementById('logViewport');
+            const colorMap = { error: 'text-red-400', success: 'text-emerald-400', info: 'text-slate-400', warn: 'text-amber-400' };
+            const timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${colorMap[status] || colorMap.info}`;
+            entry.textContent = `[${timestamp}] ${msg}`;
+            viewport.appendChild(entry);
+            viewport.scrollTop = viewport.scrollHeight;
+        };
+
+        // 3. API Core with Exponential Backoff (带指数退避的 API 核心)
+        async function invokeGemini(text, isAnalysis = false) {
+            const key = document.getElementById('apiKey').value.trim();
+            if (!key) { writeLog("Missing API Key. (缺失密钥。)", 'error'); return null; }
+
+            const model = document.getElementById('modelSelect').value;
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
             
             const payload = { contents: [{ parts: [{ text: text }] }] };
-
             if (isAnalysis) {
-                // Incorporating Anthropic Principles into System Instruction
                 payload.system_instruction = { 
-                    parts: [{ text: `You are a Master Prompt Engineer based on Anthropic's 9 chapters.
-                    Evaluate the user prompt and rewrite it to include:
-                    1. Role Prompting
-                    2. Clear Instructions using XML tags
-                    3. Chain of Thought (Thinking before acting)
-                    4. Output Formatting
-                    Respond ONLY with valid JSON: {"score": number, "analysis": "brief chinese text", "optimizedPrompt": "rewritten prompt", "chapters": ["Role", "XML", "CoT", "Formatting"]}. 
-                    Ensure NO markdown backticks in your response.` }] 
+                    parts: [{ text: "You are the Anthropic Master Coach. Evaluate prompt based on 9 chapters. Return ONLY JSON: {\"score\": number, \"analysis\": \"brief Chinese string\", \"optimizedPrompt\": \"rewritten prompt\"}. No markdown blocks." }] 
                 };
                 payload.generation_config = { response_mime_type: "application/json" };
             }
 
-            try {
-                const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error?.message || "Internal API Error");
-                return data;
-            } catch (err) {
-                log(`API Error: ${err.message}`, 'error');
-                return null;
+            let attempt = 0;
+            const maxAttempts = 5;
+
+            while (attempt < maxAttempts) {
+                try {
+                    writeLog(`Requesting ${model}... (Attempt ${attempt + 1})`);
+                    const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    const result = await response.json();
+                    
+                    if (!response.ok) throw new Error(result.error?.message || "Unknown Error");
+                    writeLog("Response received. (收到响应。)", 'success');
+                    return result;
+                } catch (err) {
+                    attempt++;
+                    if (attempt === maxAttempts) {
+                        writeLog(`Failed after ${maxAttempts} attempts: ${err.message}`, 'error');
+                        alert("Critical Error: " + err.message);
+                        return null;
+                    }
+                    const delay = Math.pow(2, attempt) * 500;
+                    writeLog(`Retrying in ${delay}ms...`, 'warn');
+                    await new Promise(res => setTimeout(res, delay));
+                }
             }
         }
 
-        // 3. Model Synchronization (模型同步)
-        document.getElementById('syncModelsBtn').onclick = async () => {
-            const apiKey = document.getElementById('apiKeyInput').value.trim();
-            if (!apiKey) return alert("Key needed first.");
-            const btn = document.getElementById('syncModelsBtn');
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<div class="loader w-3 h-3"></div> Syncing...';
+        // 4. Interaction Handlers (交互处理)
+        document.getElementById('syncModels').onclick = async () => {
+            const key = document.getElementById('apiKey').value.trim();
+            if (!key) return;
+            const btn = document.getElementById('syncModels');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner w-3 h-3 border-indigo-600"></span> Syncing...';
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
                 const data = await res.json();
-                const validModels = data.models.filter(m => m.supportedGenerationMethods.includes("generateContent")).map(m => m.name.split('/')[1]);
+                const list = data.models.filter(m => m.supportedGenerationMethods.includes("generateContent")).map(m => m.name.split('/')[1]);
                 const select = document.getElementById('modelSelect');
                 select.innerHTML = '';
-                validModels.forEach(m => {
+                list.forEach(m => {
                     const opt = document.createElement('option');
                     opt.value = m; opt.text = m;
-                    if(m.includes('2.0-flash')) opt.selected = true;
+                    if(m.includes('2.5-flash')) opt.selected = true;
                     select.appendChild(opt);
                 });
-                log(`Synced ${validModels.length} models from cloud.`, 'success');
+                writeLog(`Synced ${list.length} models successfully.`, 'success');
                 btn.innerHTML = 'Synced!';
-                setTimeout(() => { btn.innerHTML = originalHTML; lucide.createIcons(); }, 2000);
-            } catch (e) { log(`Sync Failed: ${e.message}`, 'error'); btn.innerHTML = 'Retry'; }
+                setTimeout(() => { btn.innerHTML = originalText; lucide.createIcons(); }, 2000);
+            } catch (e) { writeLog("Sync failed. Check key.", 'error'); btn.innerHTML = 'Error'; }
         };
 
-        // 4. Optimization Engine (优化引擎)
-        document.getElementById('analyzeBtn').onclick = async () => {
+        document.getElementById('optimizeBtn').onclick = async () => {
             const input = document.getElementById('promptInput').value.trim();
             if (!input) return;
-            document.getElementById('globalLoader').classList.remove('hidden');
+            document.getElementById('loadingOverlay').classList.remove('hidden');
             try {
-                const data = await callGemini(input, true);
+                const data = await invokeGemini(input, true);
                 if (data && data.candidates?.[0]?.content) {
-                    let content = data.candidates[0].content.parts[0].text;
-                    // Robust JSON cleanup (稳健的 JSON 清理)
-                    content = content.replace(/```json/gi, '').replace(/```/gi, '').trim();
-                    const result = JSON.parse(content);
-                    
-                    document.getElementById('scoreLabel').innerText = result.score + "%";
-                    document.getElementById('analysisText').innerText = result.analysis;
-                    document.getElementById('optimizedText').innerText = result.optimizedPrompt;
-                    
-                    // Render Chapters
-                    const container = document.getElementById('chapterContainer');
-                    container.innerHTML = '';
-                    (result.chapters || []).forEach(chap => {
-                        const span = document.createElement('span');
-                        span.className = "chapter-pill bg-indigo-50 text-indigo-600 border border-indigo-100";
-                        span.textContent = chap;
-                        container.appendChild(span);
-                    });
-
-                    document.getElementById('resultSection').classList.remove('hidden');
-                    document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
-                    log("Optimization successful.", 'success');
+                    let raw = data.candidates[0].content.parts[0].text;
+                    raw = raw.replace(/```json/gi, '').replace(/```/gi, '').trim();
+                    const parsed = JSON.parse(raw);
+                    document.getElementById('scoreValue').innerText = parsed.score + "%";
+                    document.getElementById('analysisSummary').innerText = parsed.analysis;
+                    document.getElementById('optimizedOutput').innerText = parsed.optimizedPrompt;
+                    document.getElementById('resultArea').classList.remove('hidden');
+                    document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth' });
                 }
-            } catch (e) { 
-                log(`JSON Error: ${e.message}`, 'error');
-                alert("The AI returned an invalid format. Please try again.");
-            } finally { document.getElementById('globalLoader').classList.add('hidden'); }
+            } catch (e) { writeLog(`Parsing Error: ${e.message}`, 'error'); }
+            finally { document.getElementById('loadingOverlay').classList.add('hidden'); }
         };
 
-        // 5. Execution Engine (执行引擎)
-        document.getElementById('runBtn').onclick = async () => {
-            const prompt = document.getElementById('optimizedText').innerText;
-            if(!prompt) return;
-            document.getElementById('globalLoader').classList.remove('hidden');
+        document.getElementById('runTestBtn').onclick = async () => {
+            const prompt = document.getElementById('optimizedOutput').innerText;
+            document.getElementById('loadingOverlay').classList.remove('hidden');
             try {
-                const data = await callGemini(prompt, false);
+                const data = await invokeGemini(prompt, false);
                 if (data && data.candidates?.[0]?.content) {
-                    document.getElementById('previewContent').innerText = data.candidates[0].content.parts[0].text;
-                    document.getElementById('previewSection').classList.remove('hidden');
-                    document.getElementById('previewSection').scrollIntoView({ behavior: 'smooth' });
-                    log("Execution complete.", 'success');
+                    document.getElementById('previewOutput').innerText = data.candidates[0].content.parts[0].text;
+                    document.getElementById('previewArea').classList.remove('hidden');
+                    document.getElementById('previewArea').scrollIntoView({ behavior: 'smooth' });
                 }
-            } finally { document.getElementById('globalLoader').classList.add('hidden'); }
+            } finally { document.getElementById('loadingOverlay').classList.add('hidden'); }
         };
 
-        // UI Helpers
         document.getElementById('copyBtn').onclick = () => {
-            const text = document.getElementById('optimizedText').innerText;
-            navigator.clipboard.writeText(text).then(() => {
-                log("Copied to clipboard.", 'success');
-                alert("已复制到剪贴板！");
+            const txt = document.getElementById('optimizedOutput').innerText;
+            navigator.clipboard.writeText(txt).then(() => {
+                writeLog("Prompt copied to clipboard. (已复制。)", 'success');
+                alert("Copied! (已复制)");
             });
         };
-        
         document.getElementById('clearInput').onclick = () => document.getElementById('promptInput').value = '';
-        document.getElementById('clearLogs').onclick = () => document.getElementById('logContainer').innerHTML = '';
+        document.getElementById('clearLogs').onclick = () => document.getElementById('logViewport').innerHTML = '';
     </script>
 </body>
 </html>
