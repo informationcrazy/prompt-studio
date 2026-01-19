@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Prompt Studio Pro - Secure</title>
+    <title>Prompt Studio Pro - Debug Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -12,7 +12,7 @@
         .glass-header { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); }
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #4f46e5; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .log-line { border-bottom: 1px solid #334155; padding: 6px 0; font-family: monospace; }
+        .log-line { border-bottom: 1px solid #334155; padding: 6px 0; font-family: monospace; word-break: break-all; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
@@ -28,19 +28,28 @@
                 </div>
                 <h1 class="font-extrabold text-lg tracking-tight">PromptStudio <span class="text-indigo-600">Pro</span></h1>
             </div>
-            <div class="flex items-center gap-2">
-                <select id="modelSelect" class="bg-slate-100 border-none text-[10px] font-bold rounded-lg px-2 py-1 outline-none text-slate-600 cursor-pointer hover:bg-slate-200 transition-colors">
-                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                    <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Exp)</option>
-                </select>
-            </div>
+            <!-- Connection Tester -->
+            <button id="testConnectionBtn" class="bg-slate-200 hover:bg-slate-300 text-[10px] font-bold px-3 py-1.5 rounded-lg text-slate-700 transition-colors flex items-center gap-1">
+                <i data-lucide="wifi" class="w-3 h-3"></i> Check API
+            </button>
         </div>
-        <!-- API Key Input Section -->
+        
+        <!-- API Key Input -->
         <div class="w-full">
             <input type="password" id="apiKeyInput" 
                 class="w-full bg-slate-100 border border-slate-200 text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-600 placeholder:text-slate-400"
-                placeholder="Paste Google Gemini API Key here (starts with AIza...)">
+                placeholder="Paste Gemini API Key (starts with AIza...)">
+        </div>
+
+        <!-- Model Selector (Updated IDs) -->
+        <div class="flex items-center gap-2">
+            <span class="text-[10px] font-bold text-slate-400 uppercase">Model:</span>
+            <select id="modelSelect" class="bg-white border border-slate-200 text-[11px] font-bold rounded-lg px-2 py-1.5 outline-none text-slate-700 w-full shadow-sm">
+                <option value="gemini-1.5-flash-001">Gemini 1.5 Flash (v001 - Stable)</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash (Alias)</option>
+                <option value="gemini-1.5-pro-001">Gemini 1.5 Pro (v001 - Stable)</option>
+                <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Experimental)</option>
+            </select>
         </div>
     </nav>
 
@@ -52,11 +61,11 @@
                 <div class="flex items-center gap-2">
                     <i data-lucide="pen-tool" class="w-3.5 h-3.5"></i> Draft Prompt
                 </div>
-                <button id="clearInput" class="hover:text-red-500 transition-colors" title="Clear Text"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                <button id="clearInput" class="hover:text-red-500 transition-colors" title="Clear"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
             </div>
             <textarea id="promptInput" 
                 class="w-full h-40 p-4 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm border border-slate-100 transition-all resize-none placeholder:text-slate-300" 
-                placeholder="Describe your prompt goal... (e.g., I want an AI to act as a Python tutor)"></textarea>
+                placeholder="Enter your prompt idea here..."></textarea>
             <button id="analyzeBtn" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold flex items-center justify-center gap-3 shadow-lg shadow-indigo-200 active:scale-[0.98] transition-all hover:bg-indigo-700">
                 <i data-lucide="sparkles" class="w-5 h-5"></i>
                 Optimize Now
@@ -88,7 +97,6 @@
                 </button>
             </div>
 
-            <!-- Execution Preview -->
             <div id="previewSection" class="hidden bg-white rounded-[2rem] p-6 border border-slate-200 shadow-sm space-y-4">
                 <div class="text-slate-400 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2">
                     <i data-lucide="terminal" class="w-3.5 h-3.5"></i> Output Preview
@@ -97,7 +105,7 @@
             </div>
         </div>
 
-        <!-- System Log -->
+        <!-- Logs -->
         <div class="bg-slate-800 rounded-2xl p-4 shadow-inner border border-slate-700">
             <div class="flex justify-between items-center mb-2 border-b border-slate-700 pb-2">
                 <span class="text-slate-400 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2">
@@ -106,74 +114,65 @@
                 <button id="clearLogs" class="text-slate-500 text-[10px] hover:text-white underline">Clear</button>
             </div>
             <div id="logContainer" class="text-[9px] text-slate-300 max-h-40 overflow-y-auto space-y-1 scrollbar-hide font-mono">
-                <div class="log-line text-emerald-400">[System] App Ready. Waiting for API Key...</div>
+                <div class="log-line text-emerald-400">[System] App Ready. Use "Check API" to verify access.</div>
             </div>
         </div>
     </main>
 
-    <!-- Global Loader -->
+    <!-- Loader -->
     <div id="globalLoader" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
-        <div class="bg-white p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-3 animate-bounce-short">
+        <div class="bg-white p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-3">
             <div class="loader"></div>
-            <p class="text-xs font-bold text-slate-600">AI Processing...</p>
+            <p class="text-xs font-bold text-slate-600">Processing...</p>
         </div>
     </div>
 
     <script>
-        // --- UTILS & INIT ---
         lucide.createIcons();
 
-        // Load API Key from LocalStorage
+        // 1. Safe Key Handling
         const savedKey = localStorage.getItem('gemini_api_key');
         if (savedKey) document.getElementById('apiKeyInput').value = savedKey;
 
-        // Save API Key on change
         document.getElementById('apiKeyInput').addEventListener('input', (e) => {
             localStorage.setItem('gemini_api_key', e.target.value.trim());
         });
 
         const log = (msg, type = 'info') => {
             const container = document.getElementById('logContainer');
-            const colors = { error: 'text-red-400', success: 'text-emerald-400', info: 'text-slate-300' };
-            const time = new Date().toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' });
+            const colors = { error: 'text-red-400', success: 'text-emerald-400', info: 'text-slate-300', warn: 'text-amber-400' };
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' });
             const line = document.createElement('div');
             line.className = `log-line ${colors[type] || colors.info}`;
-            line.textContent = `[${time}] ${msg}`;
+            line.innerHTML = `[${time}] ${msg}`;
             container.appendChild(line);
             container.scrollTop = container.scrollHeight;
         };
 
-        // --- CORE LOGIC ---
+        // 2. Main API Call
         async function callGemini(text, isAnalysis = false) {
             const apiKey = document.getElementById('apiKeyInput').value.trim();
-            if (!apiKey) {
-                log("Error: Please enter your API Key above.", 'error');
-                alert("Please enter a Google Gemini API Key.");
-                return null;
-            }
+            if (!apiKey) { log("Missing API Key", 'error'); return null; }
 
             const selectedModel = document.getElementById('modelSelect').value;
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
+            // Ensure no double 'models/' if option values change in future
+            const modelId = selectedModel.startsWith('models/') ? selectedModel.split('/')[1] : selectedModel;
             
-            log(`Calling ${selectedModel} (Analysis Mode: ${isAnalysis})...`);
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+            
+            log(`Sending request to: ${modelId}...`);
 
-            const payload = {
-                contents: [{ parts: [{ text: text }] }]
-            };
+            const payload = { contents: [{ parts: [{ text: text }] }] };
 
             if (isAnalysis) {
-                // Strict JSON System Instruction
                 payload.system_instruction = { 
                     parts: [{ text: `You are an expert Prompt Engineer. 
-                    1. Analyze the user's prompt.
-                    2. Rewrite it using advanced techniques (Role prompting, Chain of Thought, XML delimiters).
-                    3. Rate the original prompt (0-100).
-                    4. Respond ONLY with raw JSON format (no markdown blocks) containing keys: "score" (number), "analysis" (string), "optimizedPrompt" (string).` }] 
+                    1. Analyze the user's prompt. 
+                    2. Rewrite it using advanced techniques (Role prompting, Chain of Thought). 
+                    3. Return ONLY valid JSON: {"score": number, "analysis": "string", "optimizedPrompt": "string"}. 
+                    Do not use markdown code blocks.` }] 
                 };
-                // Force JSON mime type for Gemini 1.5+
-                payload.generation_config = { 
-                    response_mime_type: "application/json" 
-                };
+                payload.generation_config = { response_mime_type: "application/json" };
             }
 
             try {
@@ -186,47 +185,68 @@
                 const data = await response.json();
 
                 if (!response.ok) {
-                    const errorMsg = data.error?.message || "Unknown error occurred";
-                    log(`API Error: ${errorMsg}`, 'error');
+                    const errorMsg = data.error?.message || "Unknown error";
+                    log(`API Fail: ${errorMsg}`, 'error');
+                    if(data.error?.code === 404) {
+                        log("Tip: Try a different model or check API Key permissions.", 'warn');
+                    }
                     throw new Error(errorMsg);
                 }
 
                 return data;
             } catch (err) {
-                log(`Network/API Fail: ${err.message}`, 'error');
+                log(`Network Error: ${err.message}`, 'error');
                 return null;
             }
         }
 
-        // --- EVENT HANDLERS ---
+        // 3. Diagnostic Tool (List Models)
+        document.getElementById('testConnectionBtn').onclick = async () => {
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            if (!apiKey) return alert("Enter API Key first.");
+            
+            log("Testing connection (Listing Models)...", 'warn');
+            const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                if (!res.ok) throw new Error(data.error?.message || "Failed to list models");
+                
+                const modelNames = data.models ? data.models.map(m => m.name.replace('models/', '')).filter(n => n.includes('gemini')) : [];
+                log(`Success! Available Models: ${modelNames.join(', ')}`, 'success');
+                alert(`Connection Success!\nAvailable Models:\n${modelNames.slice(0,5).join('\n')}\n...`);
+            } catch (e) {
+                log(`Connection Failed: ${e.message}`, 'error');
+                alert(`Connection Failed:\n${e.message}`);
+            }
+        };
+
+        // 4. UI Handlers
         document.getElementById('analyzeBtn').onclick = async () => {
             const input = document.getElementById('promptInput').value.trim();
             if (!input) return log("Input is empty.", 'error');
 
             document.getElementById('globalLoader').classList.remove('hidden');
             document.getElementById('resultSection').classList.add('hidden');
-            document.getElementById('previewSection').classList.add('hidden');
 
             try {
                 const data = await callGemini(input, true);
-                if (data && data.candidates && data.candidates[0].content) {
+                if (data && data.candidates?.[0]?.content) {
                     let content = data.candidates[0].content.parts[0].text;
-                    
-                    // CLEANUP: Remove Markdown Code Blocks if model adds them
+                    // Sanitize JSON
                     content = content.replace(/```json/g, '').replace(/```/g, '').trim();
-
                     const result = JSON.parse(content);
                     
                     document.getElementById('scoreLabel').innerText = result.score + "%";
                     document.getElementById('optimizedText').innerText = result.optimizedPrompt;
                     document.getElementById('resultSection').classList.remove('hidden');
                     document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
-                    log("Analysis complete.", 'success');
-                } else {
-                    log("Invalid response structure from API.", 'error');
+                    log("Optimization complete.", 'success');
                 }
             } catch (e) {
-                log(`Processing Failed: ${e.message}`, 'error');
+                log(`Processing Error: ${e.message}`, 'error');
             } finally {
                 document.getElementById('globalLoader').classList.add('hidden');
             }
@@ -235,9 +255,7 @@
         document.getElementById('runBtn').onclick = async () => {
             const prompt = document.getElementById('optimizedText').innerText;
             if(!prompt) return;
-
             document.getElementById('globalLoader').classList.remove('hidden');
-            
             try {
                 const data = await callGemini(prompt, false);
                 if (data) {
@@ -245,7 +263,6 @@
                     document.getElementById('previewContent').innerText = output;
                     document.getElementById('previewSection').classList.remove('hidden');
                     document.getElementById('previewSection').scrollIntoView({ behavior: 'smooth' });
-                    log("Test run successful.", 'success');
                 }
             } finally {
                 document.getElementById('globalLoader').classList.add('hidden');
@@ -253,23 +270,12 @@
         };
 
         document.getElementById('copyBtn').onclick = () => {
-            const text = document.getElementById('optimizedText').innerText;
-            navigator.clipboard.writeText(text).then(() => {
-                log("Optimized prompt copied.", 'success');
-                const btn = document.getElementById('copyBtn');
-                const originalIcon = btn.innerHTML;
-                btn.innerHTML = '<i data-lucide="check" class="w-4 h-4 text-emerald-500"></i>';
-                lucide.createIcons();
-                setTimeout(() => { 
-                    btn.innerHTML = originalIcon; 
-                    lucide.createIcons(); 
-                }, 1500);
-            });
+            navigator.clipboard.writeText(document.getElementById('optimizedText').innerText);
+            log("Copied to clipboard.", 'success');
         };
-
+        
         document.getElementById('clearInput').onclick = () => {
              document.getElementById('promptInput').value = '';
-             document.getElementById('promptInput').focus();
         };
 
         document.getElementById('clearLogs').onclick = () => {
