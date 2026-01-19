@@ -33,8 +33,8 @@
    - 查看评分和优化后的版本，点击 **"Run Test"** 验证效果。
 
 ## 📸 截图 (Screenshots)
-
-*(此处建议上传一张您工具运行时的截图)*
+![截图](
+https://github.com/informationcrazy/prompt-studio/blob/main/Screenshot_2026-01-19-21-53-51-393_org.mozilla.firefox-edit.jpg)
 
 ## 🔧 技术栈 (Tech Stack)
 
